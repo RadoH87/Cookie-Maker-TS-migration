@@ -1,74 +1,79 @@
-const express = require('express');
+import * as express from "express";
 
-class ConfiguratorRouter {
-    constructor(cmapp) {
-        this.cmapp = cmapp;
-        this.router = express.Router();
-        this.setUpRoutes();
+export class ConfiguratorRouter {
+  constructor(cmapp) {
+    this.cmapp = cmapp;
+    this.router = express.Router();
+    this.setUpRoutes();
+  }
+
+  setUpRoutes() {
+    this.router.get("/select-base/:baseName", this.selectBase);
+    this.router.get("/add-addon/:addonName", this.addAddon);
+    this.router.get("/delete-addon/:addonName", this.deleteAddon);
+  }
+
+  selectBase = (req, res) => {
+    const { baseName } = req.params;
+
+    if (!this.cmapp.data.COOKIE_BASES[baseName]) {
+      return this.cmapp.showErrorPage(
+        res,
+        `There is no such base as ${baseName}.`
+      );
     }
 
-    setUpRoutes() {
-        this.router.get('/select-base/:baseName', this.selectBase);
-        this.router.get('/add-addon/:addonName', this.addAddon);
-        this.router.get('/delete-addon/:addonName', this.deleteAddon);
+    res.cookie("cookieBase", baseName).render("configurator/base-selected", {
+      baseName,
+    });
+  };
+
+  addAddon = (req, res) => {
+    const { addonName } = req.params;
+
+    if (!this.cmapp.data.COOKIE_ADDONS[addonName]) {
+      return this.cmapp.showErrorPage(
+        res,
+        `There is no such addon as ${addonName}.`
+      );
     }
 
-    selectBase = (req, res) => {
-        const {baseName} = req.params;
+    const addons = this.cmapp.getAddonsFromReq(req);
 
-        if (!this.cmapp.data.COOKIE_BASES[baseName]) {
-            return this.cmapp.showErrorPage(res, `There is no such base as ${baseName}.`);
-        }
+    if (addons.includes(addonName)) {
+      return this.cmapp.showErrorPage(
+        res,
+        `${addonName} is already on your cookie. You cannot add it twice.`
+      );
+    }
 
-        res
-            .cookie('cookieBase', baseName)
-            .render('configurator/base-selected', {
-                baseName,
-            });
-    };
+    addons.push(addonName);
 
-    addAddon = (req, res) => {
-        const {addonName} = req.params;
+    res
+      .cookie("cookieAddons", JSON.stringify(addons))
+      .render("configurator/added", {
+        addonName,
+      });
+  };
 
-        if (!this.cmapp.data.COOKIE_ADDONS[addonName]) {
-            return this.cmapp.showErrorPage(res, `There is no such addon as ${addonName}.`);
-        }
+  deleteAddon = (req, res) => {
+    const { addonName } = req.params;
 
-        const addons = this.cmapp.getAddonsFromReq(req);
+    const oldAddons = this.cmapp.getAddonsFromReq(req);
 
-        if (addons.includes(addonName)) {
-            return this.cmapp.showErrorPage(res, `${addonName} is already on your cookie. You cannot add it twice.`);
-        }
+    if (!oldAddons.includes(addonName)) {
+      return this.cmapp.showErrorPage(
+        res,
+        `Cannot delete something that isn't already added to the cookie. ${addonName} not found on cookie.`
+      );
+    }
 
-        addons.push(addonName);
+    const addons = oldAddons.filter((addon) => addon !== addonName);
 
-        res
-            .cookie('cookieAddons', JSON.stringify(addons))
-            .render('configurator/added', {
-                addonName,
-            });
-    };
-
-    deleteAddon = (req, res) => {
-        const {addonName} = req.params;
-
-        const oldAddons = this.cmapp.getAddonsFromReq(req);
-
-        if (!oldAddons.includes(addonName)) {
-            return this.cmapp.showErrorPage(res, `Cannot delete something that isn't already added to the cookie. ${addonName} not found on cookie.`);
-        }
-
-        const addons = oldAddons.filter(addon => addon !== addonName);
-
-        res
-            .cookie('cookieAddons', JSON.stringify(addons))
-            .render('configurator/deleted', {
-                addonName,
-            });
-    };
+    res
+      .cookie("cookieAddons", JSON.stringify(addons))
+      .render("configurator/deleted", {
+        addonName,
+      });
+  };
 }
-
-
-module.exports = {
-    ConfiguratorRouter,
-};
