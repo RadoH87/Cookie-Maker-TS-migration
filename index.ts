@@ -8,19 +8,21 @@ import {
 } from "express";
 import * as cookieParser from "cookie-parser";
 import { engine } from "express-handlebars";
-import * as hbs from "express-handlebars";
 import { HomeRouter } from "./routes/home";
 import { ConfiguratorRouter } from "./routes/configurator";
 import { OrderRouter } from "./routes/order";
 import { handlebarsHelpers } from "./utils/handlebars-helpers";
 import { COOKIE_BASES, COOKIE_ADDONS } from "./data/cookies-data";
+import { Entries } from "./types/entries";
+import { MyRouter } from "./types/my-router";
 
 export class CookieMakerApp {
   private app: Application;
-  private data = {
+  public readonly data = {
     COOKIE_BASES,
     COOKIE_ADDONS,
   };
+  private readonly router = [HomeRouter, ConfiguratorRouter, OrderRouter];
   constructor() {
     this._configureApp();
     this._setRoutes();
@@ -44,9 +46,10 @@ export class CookieMakerApp {
   }
 
   _setRoutes(): void {
-    this.app.use("/", new HomeRouter(this).router);
-    this.app.use("/configurator", new ConfiguratorRouter(this).router);
-    this.app.use("/order", new OrderRouter(this).router);
+    for (const router of this.router) {
+      const obj: MyRouter = new router(this);
+      this.app.use(obj.urlPrefix, obj.router);
+    }
   }
 
   _run(): void {
@@ -70,6 +73,8 @@ export class CookieMakerApp {
     addons: string[];
     base: string | undefined;
     sum: number;
+    allBases: Entries;
+    allAddons: Entries;
   } {
     const { cookieBase: base } = req.cookies as {
       cookieBase?: string;
