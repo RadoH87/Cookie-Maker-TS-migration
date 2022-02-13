@@ -10,11 +10,11 @@ export class OrderRouter implements MyRouter {
   }
 
   private setUpRoutes(): void {
-    this.router.get("/summary", this.sumary);
+    this.router.get("/summary", this.summary);
     this.router.get("/thanks", this.thanks);
   }
 
-  private sumary = (req: Request, res: Response): void => {
+  private summary = (req: Request, res: Response): void => {
     const { sum, addons, base, allBases, allAddons } =
       this.cmapp.getCookieSettings(req);
 
