@@ -53,8 +53,8 @@ export class CookieMakerApp {
   }
 
   _run(): void {
-    this.app.listen(3000, "0.0.0.0", () => {
-      console.log("Listening on :3000");
+    this.app.listen(5000, "0.0.0.0", () => {
+      console.log("Listening on http://localhost:5000");
     });
   }
 
